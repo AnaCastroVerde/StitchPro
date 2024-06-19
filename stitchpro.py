@@ -14,7 +14,7 @@ from scipy.spatial.distance import cdist, pdist, squareform
 from skimage.transform import rescale, resize
 import argparse
 import tifffile
-#from tiatoolbox.wsicore import WSIReader
+from tiatoolbox.wsicore import WSIReader
 import time
 
 ## Parse arguments
@@ -704,7 +704,7 @@ average_euclidean_distance_units = (euclidean_distance_0_1_center + euclidean_di
                               + euclidean_distance_1_2_out + euclidean_distance_2_3_center + euclidean_distance_2_3_out
                               + euclidean_distance_3_0_center + euclidean_distance_3_0_out)/8
 
-#output[output == 0] = 255
+output[output == 0] = 255
 output = np.where(output_d > 1, output / output_d, output)
 #output[np.sum(output, axis = -1) > 650] = 0
 output = output.astype(np.uint8)
