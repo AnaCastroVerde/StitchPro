@@ -14,7 +14,7 @@ from scipy.spatial.distance import cdist, pdist, squareform
 from skimage.transform import rescale, resize
 import argparse
 import tifffile
-from tiatoolbox.wsicore.wsireader import WSIReader
+#from tiatoolbox.wsicore import WSIReader
 import time
 
 ## Parse arguments
