@@ -152,7 +152,7 @@ extractFilter.Update()
 fixed_slice = extractFilter.GetOutput()
 
 itk.imwrite(fixed_slice, args.output_path + 'fixed_slice.nii.gz')
-fixed_image = sitk.ReadImage(args.output_path + 'flipped.nii.gz', sitk.sitkFloat32)[:, :, 0]
+fixed_image = sitk.ReadImage(args.output_path + 'fixed_slice.nii.gz', sitk.sitkFloat32)[:, :, 0]
 sitk.WriteImage(fixed_image, args.output_path + 'fixed_2d.nii.gz')
 
 # Flip the 2D slice
@@ -162,14 +162,14 @@ Dimension = 2
 ImageType = itk.Image[PixelType, Dimension]
 
 reader = itk.ImageFileReader[ImageType].New()
-reader.SetFileName(args.output_path + 'fixed_slice.nii.gz')
+reader.SetFileName(args.output_path + 'fixed_2d.nii.gz')
 
 flipFilter = itk.FlipImageFilter[ImageType].New()
 flipFilter.SetInput(reader.GetOutput())
 
 #flip_filter = itk.FlipImageFilter.New(fixed_image)
 
-flip_ax = (True, True) #True, False means vertical flip
+flip_ax = (True, False) #True, False means vertical flip
 flipFilter.SetFlipAxes(flip_ax)
 
 writer = itk.ImageFileWriter[ImageType].New()
@@ -521,10 +521,11 @@ print("Dice similarity coefficient (DSC):", round(dice, 2))
 
 moving_aux = itk.imread(args.input_path + args.moving_aux, itk.F)
 moving_aux.SetSpacing(new_spacing)
+print("aux spacing", moving_aux.GetSpacing())
 
 result_image_transformix = itk.transformix_filter(
-    moving_image=moving_aux,
-    transform_parameter_object=result_transform_parameters,
+    moving_aux,
+    result_transform_parameters,
 )
 
 itk.imwrite(result_image_transformix, args.output_path + 'result_image_aux.nii.gz')
