@@ -15,17 +15,18 @@ from matplotlib import pyplot as plt
 import imageio.v2 as imageio
 from scipy.ndimage import rotate
 import argparse
+import cv2 as cv
 
 def main(input_path: str,
          output_path: str,
          output_name: str,
          tiff_image: str,
-         left: int,
-         right: int,
-         top: int,
-         bottom: int,
+         #left: int,
+         #right: int,
+         #top: int,
+         #bottom: int,
          level: int,
-         angle: int,
+         #angle: int,
          divide_horizontal: bool,
          divide_vertical: bool,
          show_image: bool):
@@ -47,16 +48,16 @@ def main(input_path: str,
     masker = MorphologicalMasker(power=1.25, min_region_size=80000)
     masks = masker.fit_transform([wsi_thumb])[0]
 
-    def show_side_by_side(image_1: np.ndarray, image_2: np.ndarray) -> None:
-        plt.subplot(1, 2, 1)
-        plt.imshow(image_1)
-        plt.axis("off")
-        plt.subplot(1, 2, 2)
-        plt.imshow(image_2)
-        plt.axis("off")
-        plt.show()
+    # def show_side_by_side(image_1: np.ndarray, image_2: np.ndarray) -> None:
+    #     plt.subplot(1, 2, 1)
+    #     plt.imshow(image_1)
+    #     plt.axis("off")
+    #     plt.subplot(1, 2, 2)
+    #     plt.imshow(image_2)
+    #     plt.axis("off")
+    #     plt.show()
 
-    show_side_by_side(wsi_thumb, masks)
+    # show_side_by_side(wsi_thumb, masks)
 
     start_x, start_y, end_x, end_y = get_bounding_box(masks)
 
@@ -64,6 +65,15 @@ def main(input_path: str,
     bounds = [start_x, start_y, end_x, end_y]
     region = reader.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
     
+    ## Extract angle to orient fragment to horizontal
+    binary_mask = masks.astype(np.uint8)*255
+    contours, _ = cv.findContours(binary_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    largest_contour = max(contours, key=cv.contourArea)
+    #rect_corners = np.array([[end_x,start_y],[start_x,start_y],[start_x,end_y],[end_x,end_y]], dtype =np.float32)
+    #print("RECT corners", rect_corners)
+    rect = cv.minAreaRect(largest_contour)
+    angle = round(rect[-1], 0)
+
     ## Small rotation angle to straighten up the fragment
     region_rotated = rotate(region, angle = angle, axes=(1, 0), reshape=True, mode = 'constant', cval=230.0)
 
@@ -135,16 +145,16 @@ if __name__ == "__main__":
                         help='Histopathology image to preprocess.')
     parser.add_argument('--level', dest='level', required=True, type=int,
                         help='Resolution level to downsample.')
-    parser.add_argument('--top', dest='top', required=True, type=int,
-                        help='Bounds distance to subtract on the top.')
-    parser.add_argument('--left', dest='left', required=True, type=int,
-                        help='Bounds distance to subtract on the left.')
-    parser.add_argument('--right', dest='right', required=True, type=int,
-                        help='Bounds distance to subtract on the right.')
-    parser.add_argument('--bottom', dest='bottom', required=True, type=int,
-                        help='Bounds distance to subtract on the bottom.')
-    parser.add_argument('--angle', dest='angle', required=True, type=int,
-                        help='Small angle to rotate the fragment; (-) if clockwise.')
+    #parser.add_argument('--top', dest='top', required=True, type=int,
+                        #help='Bounds distance to subtract on the top.')
+    #parser.add_argument('--left', dest='left', required=True, type=int,
+                        #help='Bounds distance to subtract on the left.')
+    #parser.add_argument('--right', dest='right', required=True, type=int,
+                        #help='Bounds distance to subtract on the right.')
+    #parser.add_argument('--bottom', dest='bottom', required=True, type=int,
+                        #help='Bounds distance to subtract on the bottom.')
+    #parser.add_argument('--angle', dest='angle', required=True, type=int,
+                        #help='Small angle to rotate the fragment; (-) if clockwise.')
     parser.add_argument('--divide_horizontal', dest='divide_horizontal', action = 'store_true',
                         help='Create two fragments from one, cut in the horizontal direction.')
     parser.add_argument('--divide_vertical', dest='divide_vertical', action = 'store_true',
@@ -159,12 +169,12 @@ if __name__ == "__main__":
          output_path=args.output_path,
          output_name=args.output_name,
          tiff_image=args.tiff_image,
-         left=args.left,
-         right=args.right,
-         top=args.top,
-         bottom=args.bottom,
+         #left=args.left,
+         #right=args.right,
+         #top=args.top,
+         #bottom=args.bottom,
          level=args.level,
-         angle=args.angle,
+         #angle=args.angle,
          divide_horizontal=args.divide_horizontal,
          divide_vertical=args.divide_vertical,
          show_image=args.show_image)
