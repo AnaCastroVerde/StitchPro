@@ -27,6 +27,8 @@ parser.add_argument('--input_path', dest = 'input_path', required = True,
                     help = 'Path to folder containing the images.')
 parser.add_argument('--output_path', dest = 'output_path', required = True,
                     help = 'Path to store the registration results.')
+parser.add_argument('--output_name', dest = 'output_name', required = True,
+                    help = 'Name of the stitching output file.')
 parser.add_argument('--lr', dest = 'lr', required = True,
                     help = 'Lower-right histopathology fragment.')
 parser.add_argument('--ll', dest = 'll', required = True,
@@ -713,7 +715,7 @@ for i, data in enumerate(data_dict):
         im = cv2.warpPerspective(
             np.uint8(image * mask[:, :, np.newaxis]),
             par_to_H(0, 0, 0), output_size)
-        im = cv2.warpPerspective(
+        im_aux = cv2.warpPerspective(
             np.uint8(image_aux * mask[:, :, np.newaxis]),
             par_to_H(0, 0, 0), output_size)
         axis_1_anchor = data['pos_line']
@@ -729,6 +731,7 @@ for i, data in enumerate(data_dict):
         output[im[:, :, :] > 0] += im[im[:, :, :] > 0]
         output_aux[im_aux[:, :, :] > 0] += im_aux[im_aux[:, :, :] > 0]
         output_d[im[:, :, :] > 0] += 1
+        output_d_aux[im_aux[:, :, :] > 0] += 1
 
 euclidean_distance_0_1_center = np.sqrt((axis_2_final[1][0][0] - axis_1_final[0][0][0]) ** 2 + (axis_2_final[1][0][1] - axis_1_final[0][0][1]) ** 2)
 euclidean_distance_0_1_out = np.sqrt((axis_2_final[1][1][0] - axis_1_final[0][1][0]) ** 2 + (axis_2_final[1][1][1] - axis_1_final[0][1][1]) ** 2)
@@ -748,7 +751,7 @@ output = np.where(output_d > 1, output / output_d, output)
 #output[np.sum(output, axis = -1) > 650] = 0
 output = output.astype(np.uint8)
 
-output_aux[output_aux == 0] = 255
+#output_aux[output_aux == 0] = 255
 output_aux = np.where(output_d_aux > 1, output_aux / output_d_aux, output_aux)
 output_aux = output_aux.astype(np.uint8)
 
@@ -773,8 +776,8 @@ original_spacing = (float(args.original_spacing), float(args.original_spacing))
 #new_spacing_y = original_size[1]*original_spacing[1]/new_size[1]
 new_spacing = (2**int(args.level))*original_spacing[0]#*(10**(-3))
 
-tifffile.imwrite(args.output_path+"output.tif", np.array(region), photometric='rgb', imagej=True, resolution = (1/new_spacing,1/new_spacing), metadata={'spacing': new_spacing, 'unit': 'um'})
-tifffile.imwrite(args.output_path+"output_aux.tif", np.array(region_aux), photometric='rgb', imagej=True, resolution = (1/new_spacing,1/new_spacing), metadata={'spacing': new_spacing, 'unit': 'um'})
+tifffile.imwrite(args.output_path+str(args.output_name)+".tif", np.array(region), photometric='rgb', imagej=True, resolution = (1/new_spacing,1/new_spacing), metadata={'spacing': new_spacing, 'unit': 'um'})
+tifffile.imwrite(args.output_path+str(args.output_name)+"_aux.tif", np.array(region_aux), photometric='rgb', imagej=True, resolution = (1/new_spacing,1/new_spacing), metadata={'spacing': new_spacing, 'unit': 'um'})
 #imageio.imwrite(args.output_path+"output.tif", output, format="tif")
 
 average_euclidean_distance_mm = average_euclidean_distance_units * new_spacing * (10**(-3))
