@@ -45,16 +45,14 @@ parser.add_argument('--ur_aux', dest = 'ur_aux', required = True,
                     help = 'Upper-right histopathology fragment (auxiliary).')
 parser.add_argument('--ul_aux', dest = 'ul_aux', required = True,
                     help = 'Upper-left histopathology fragment (auxiliary).')
-parser.add_argument('--preprocessing', dest = 'preprocessing', action = 'store_true',
-                    help = 'Apply downsampling and cropping to the original fragment.')
-parser.add_argument('--ur_angle', dest = 'ur_angle', default = 0,
-                    help = 'Rotation angle - angle (degrees) to rotate upper-right fragment (int number).')
-parser.add_argument('--lr_angle', dest = 'lr_angle', default = 0,
-                    help = 'Rotation angle - angle (degrees) to rotate lower-right fragment (int number).')
-parser.add_argument('--ll_angle', dest = 'll_angle', default = 0,
-                    help = 'Rotation angle - angle (degrees) to rotate lower-left fragment (int number).')
-parser.add_argument('--ul_angle', dest='ul_angle', default = 0,
-                    help = 'Rotation angle - angle (degrees) to rotate upper-left fragment (int number).')
+# parser.add_argument('--ur_angle', dest = 'ur_angle', default = 0,
+#                     help = 'Rotation angle - angle (degrees) to rotate upper-right fragment (int number).')
+# parser.add_argument('--lr_angle', dest = 'lr_angle', default = 0,
+#                     help = 'Rotation angle - angle (degrees) to rotate lower-right fragment (int number).')
+# parser.add_argument('--ll_angle', dest = 'll_angle', default = 0,
+#                     help = 'Rotation angle - angle (degrees) to rotate lower-left fragment (int number).')
+# parser.add_argument('--ul_angle', dest='ul_angle', default = 0,
+#                     help = 'Rotation angle - angle (degrees) to rotate upper-left fragment (int number).')
 parser.add_argument('--median_filter_ur', dest = 'median_filter_ur', default = 20,
                     help = 'Size of median filter to reduce noise on thresholded upper-right fragment (int number).')
 parser.add_argument('--median_filter_lr', dest = 'median_filter_lr', default = 20,
@@ -95,70 +93,80 @@ histo_fragment_ll = imageio.imread(args.input_path + args.ll)
 histo_fragment_ur = imageio.imread(args.input_path + args.ur)
 histo_fragment_ul = imageio.imread(args.input_path + args.ul)
 
+original_height_ur, original_width_ur = histo_fragment_ur.shape[:2]
+original_height_lr, original_width_lr = histo_fragment_lr.shape[:2]
+original_height_ll, original_width_ll = histo_fragment_ll.shape[:2]
+original_height_ul, original_width_ul = histo_fragment_ul.shape[:2]
+
 histo_fragment_lr_aux = imageio.imread(args.input_path + args.lr_aux)
 histo_fragment_ll_aux = imageio.imread(args.input_path + args.ll_aux)
 histo_fragment_ur_aux = imageio.imread(args.input_path + args.ur_aux)
 histo_fragment_ul_aux = imageio.imread(args.input_path + args.ul_aux)
 
-if int(args.ur_angle) == 90:
-    histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_90_CLOCKWISE)
-    histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_90_CLOCKWISE)
-if int(args.ur_angle) == -90:
-    histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
-if int(args.ur_angle) == 180:
-    histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_180)
-    histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_180)
-if int(args.ur_angle) == 0:
-    histo_fragment_ur = histo_fragment_ur
-    histo_fragment_ur_aux = histo_fragment_ur_aux
-if (int(args.ur_angle) != 90) & (int(args.ur_angle) != 180) & (int(args.ur_angle) != -90) & (int(args.ur_angle) != 0):
-    print("Only 0, 90,-90 or 180 degrees are accepted.")
+original_height_ur_aux, original_width_ur_aux = histo_fragment_ur_aux.shape[:2]
+original_height_lr_aux, original_width_lr_aux = histo_fragment_lr_aux.shape[:2]
+original_height_ll_aux, original_width_ll_aux = histo_fragment_ll_aux.shape[:2]
+original_height_ul_aux, original_width_ul_aux = histo_fragment_ul_aux.shape[:2]
 
-if int(args.lr_angle) == 90:
-    histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_90_CLOCKWISE)
-    histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_90_CLOCKWISE)
-if int(args.lr_angle) == -90:
-    histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
-if int(args.lr_angle) == 180:
-    histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_180)
-    histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_180)
-if int(args.lr_angle) == 0:
-    histo_fragment_lr = histo_fragment_lr
-    histo_fragment_lr_aux = histo_fragment_lr_aux
-if (int(args.lr_angle) != 90) & (int(args.lr_angle) != 180) & (int(args.lr_angle) != -90) & (int(args.lr_angle) != 0):
-    print("Only 0, 90,-90 or 180 degrees are accepted.")
+# if int(args.ur_angle) == 90:
+#     histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_90_CLOCKWISE)
+#     histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_90_CLOCKWISE)
+# if int(args.ur_angle) == -90:
+#     histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_90_COUNTERCLOCKWISE)
+#     histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+# if int(args.ur_angle) == 180:
+#     histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_180)
+#     histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_180)
+# if int(args.ur_angle) == 0:
+#     histo_fragment_ur = histo_fragment_ur
+#     histo_fragment_ur_aux = histo_fragment_ur_aux
+# if (int(args.ur_angle) != 90) & (int(args.ur_angle) != 180) & (int(args.ur_angle) != -90) & (int(args.ur_angle) != 0):
+#     print("Only 0, 90,-90 or 180 degrees are accepted.")
 
-if int(args.ll_angle) == 90:
-    histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_90_CLOCKWISE)
-    histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_90_CLOCKWISE)
-if int(args.ll_angle) == -90:
-    histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
-if int(args.ll_angle) == 180:
-    histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_180)
-    histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_180)
-if int(args.ll_angle) == 0:
-    histo_fragment_ll = histo_fragment_ll
-    histo_fragment_ll_aux = histo_fragment_ll_aux
-if (int(args.ll_angle) != 90) & (int(args.ll_angle) != 180) & (int(args.ll_angle) != -90) & (int(args.ll_angle) != 0):
-    print("Only 0, 90,-90 or 180 degrees are accepted.")
+# if int(args.lr_angle) == 90:
+#     histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_90_CLOCKWISE)
+#     histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_90_CLOCKWISE)
+# if int(args.lr_angle) == -90:
+#     histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+#     histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+# if int(args.lr_angle) == 180:
+#     histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_180)
+#     histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_180)
+# if int(args.lr_angle) == 0:
+#     histo_fragment_lr = histo_fragment_lr
+#     histo_fragment_lr_aux = histo_fragment_lr_aux
+# if (int(args.lr_angle) != 90) & (int(args.lr_angle) != 180) & (int(args.lr_angle) != -90) & (int(args.lr_angle) != 0):
+#     print("Only 0, 90,-90 or 180 degrees are accepted.")
 
-if int(args.ul_angle) == 90:
-    histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_90_CLOCKWISE)
-    histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_90_CLOCKWISE)
-if int(args.ul_angle) == -90:
-    histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
-if int(args.ul_angle) == 180:
-    histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_180)
-    histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_180)
-if int(args.ul_angle) == 0:
-    histo_fragment_ul = histo_fragment_ul
-    histo_fragment_ul_aux = histo_fragment_ul_aux
-if (int(args.ul_angle) != 90) & (int(args.ul_angle) != 180) & (int(args.ul_angle) != -90) & (int(args.ul_angle) != 0):
-    print("Only 0, 90,-90 or 180 degrees are accepted.")
+# if int(args.ll_angle) == 90:
+#     histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_90_CLOCKWISE)
+#     histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_90_CLOCKWISE)
+# if int(args.ll_angle) == -90:
+#     histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_90_COUNTERCLOCKWISE)
+#     histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+# if int(args.ll_angle) == 180:
+#     histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_180)
+#     histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_180)
+# if int(args.ll_angle) == 0:
+#     histo_fragment_ll = histo_fragment_ll
+#     histo_fragment_ll_aux = histo_fragment_ll_aux
+# if (int(args.ll_angle) != 90) & (int(args.ll_angle) != 180) & (int(args.ll_angle) != -90) & (int(args.ll_angle) != 0):
+#     print("Only 0, 90,-90 or 180 degrees are accepted.")
+
+# if int(args.ul_angle) == 90:
+#     histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_90_CLOCKWISE)
+#     histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_90_CLOCKWISE)
+# if int(args.ul_angle) == -90:
+#     histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_90_COUNTERCLOCKWISE)
+#     histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+# if int(args.ul_angle) == 180:
+#     histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_180)
+#     histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_180)
+# if int(args.ul_angle) == 0:
+#     histo_fragment_ul = histo_fragment_ul
+#     histo_fragment_ul_aux = histo_fragment_ul_aux
+# if (int(args.ul_angle) != 90) & (int(args.ul_angle) != 180) & (int(args.ul_angle) != -90) & (int(args.ul_angle) != 0):
+#     print("Only 0, 90,-90 or 180 degrees are accepted.")
 
 # histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_180)
 # histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_180)
@@ -202,9 +210,6 @@ if (int(args.ul_angle) != 90) & (int(args.ul_angle) != 180) & (int(args.ul_angle
 # axs[3,1].imshow(res_lr, cmap="gray")
 # plt.show()
 
-images_original = [histo_fragment_ur, histo_fragment_lr, histo_fragment_ll, histo_fragment_ul]
-images_original_aux = [histo_fragment_ur_aux, histo_fragment_lr_aux, histo_fragment_ll_aux, histo_fragment_ul_aux]
-
 # Downsample the images
 DOWNSAMPLE_LEVEL = 4  # avoid running the optimization for the entire image
 add = 0
@@ -216,13 +221,6 @@ histo_fragment_ur = rescale(histo_fragment_ur, 1 / DOWNSAMPLE_LEVEL, channel_axi
                             preserve_range=True).astype(np.uint8)
 histo_fragment_ul = rescale(histo_fragment_ul, 1 / DOWNSAMPLE_LEVEL, channel_axis=2,
                             preserve_range=True).astype(np.uint8)
-
-# print(np.sum(histo_fragment_lr[100,500])) #background
-# print(np.sum(histo_fragment_lr[500,500])) #tissue
-# print(np.sum(histo_fragment_ur[100,500])) #background
-# print(np.sum(histo_fragment_ur[500,500])) #tissue
-# print(np.sum(histo_fragment_ul[100,500])) #background
-# print(np.sum(histo_fragment_ul[500,500])) #tissue
 
 ### Find image contours
 
@@ -241,11 +239,6 @@ axs[0, 0].imshow(histo_fragment_gray_ul, cmap="gray")
 axs[0, 1].imshow(histo_fragment_gray_ur, cmap="gray")
 axs[1, 0].imshow(histo_fragment_gray_ll, cmap="gray")
 axs[1, 1].imshow(histo_fragment_gray_lr, cmap="gray")
-#
-# print(histo_fragment_gray_ul.shape)
-# print(histo_fragment_gray_ur.shape)
-# print(histo_fragment_gray_ll.shape)
-# print(histo_fragment_gray_lr.shape)
 
 ## Plot the intensity histogram
 hist_ul = ndi.histogram(histo_fragment_gray_ul, min=0, max=255, bins=256)
@@ -309,6 +302,128 @@ if args.show_image == True:
     axs[1, 0].imshow(image_thresholded_filtered_closed_ll, cmap="gray")
     axs[1, 1].imshow(image_thresholded_filtered_closed_lr, cmap="gray")
 
+# Detect corner with minimumn intensity
+
+dim_x_ur, dim_y_ur = image_thresholded_filtered_closed_ur.shape[:2]
+
+corner_intensity_ur_0 = image_thresholded_filtered_closed_ur[int((1/6)*dim_x_ur), int(dim_y_ur-(1/6)*dim_y_ur)]
+corner_intensity_ur_1 = image_thresholded_filtered_closed_ur[int(dim_x_ur-(1/6)*dim_x_ur), int(dim_y_ur-(1/6)*dim_y_ur)]
+corner_intensity_ur_2 = image_thresholded_filtered_closed_ur[int(dim_x_ur-(1/6)*dim_x_ur), int((1/6)*dim_y_ur)]
+corner_intensity_ur_3 = image_thresholded_filtered_closed_ur[int((1/6)*dim_x_ur), int((1/6)*dim_y_ur)]
+corners = [int(corner_intensity_ur_0), int(corner_intensity_ur_1), int(corner_intensity_ur_2), int(corner_intensity_ur_3)]
+background_value_ur = min(corners)
+min_index_ur = corners.index(background_value_ur)
+image_thresholded_filtered_closed_ur = np.array(image_thresholded_filtered_closed_ur).astype(int)
+
+dim_x_lr, dim_y_lr = image_thresholded_filtered_closed_lr.shape[:2]
+
+corner_intensity_lr_0 = image_thresholded_filtered_closed_lr[int((1/6)*dim_x_lr), int(dim_y_lr-(1/6)*dim_y_lr)]
+corner_intensity_lr_1 = image_thresholded_filtered_closed_lr[int(dim_x_lr-(1/6)*dim_x_lr), int(dim_y_lr-(1/6)*dim_y_lr)]
+corner_intensity_lr_2 = image_thresholded_filtered_closed_lr[int(dim_x_lr-(1/6)*dim_x_lr), int((1/6)*dim_y_lr)]
+corner_intensity_lr_3 = image_thresholded_filtered_closed_lr[int((1/6)*dim_x_lr), int((1/6)*dim_y_lr)]
+corners = [int(corner_intensity_lr_0), int(corner_intensity_lr_1), int(corner_intensity_lr_2), int(corner_intensity_lr_3)]
+background_value_lr = min(corners)
+min_index_lr = corners.index(background_value_lr)
+image_thresholded_filtered_closed_lr = np.array(image_thresholded_filtered_closed_lr).astype(int)
+
+dim_x_ll, dim_y_ll = image_thresholded_filtered_closed_ll.shape[:2]
+
+corner_intensity_ll_0 = image_thresholded_filtered_closed_ll[int((1/6)*dim_x_ll), int(dim_y_ll-(1/6)*dim_y_ll)]
+corner_intensity_ll_1 = image_thresholded_filtered_closed_ll[int(dim_x_ll-(1/6)*dim_x_ll), int(dim_y_ll-(1/6)*dim_y_ll)]
+corner_intensity_ll_2 = image_thresholded_filtered_closed_ll[int(dim_x_ll-(1/6)*dim_x_ll), int((1/6)*dim_y_ll)]
+corner_intensity_ll_3 = image_thresholded_filtered_closed_ll[int((1/6)*dim_x_ll), int((1/6)*dim_y_ll)]
+corners = [int(corner_intensity_ll_0), int(corner_intensity_ll_1), int(corner_intensity_ll_2), int(corner_intensity_ll_3)]
+background_value_ll = min(corners)
+min_index_ll = corners.index(background_value_ll)
+image_thresholded_filtered_closed_ll = np.array(image_thresholded_filtered_closed_ll).astype(int)
+
+dim_x_ul, dim_y_ul = image_thresholded_filtered_closed_ul.shape[:2]
+
+corner_intensity_ul_0 = image_thresholded_filtered_closed_ul[int((1/6)*dim_x_ul), int(dim_y_ul-(1/6)*dim_y_ul)]
+corner_intensity_ul_1 = image_thresholded_filtered_closed_ul[int(dim_x_ul-(1/6)*dim_x_ul), int(dim_y_ul-(1/6)*dim_y_ul)]
+corner_intensity_ul_2 = image_thresholded_filtered_closed_ul[int(dim_x_ul-(1/6)*dim_x_ul), int((1/6)*dim_y_ul)]
+corner_intensity_ul_3 = image_thresholded_filtered_closed_ul[int((1/6)*dim_x_ul), int((1/6)*dim_y_ul)]
+corners = [int(corner_intensity_ul_0), int(corner_intensity_ul_1), int(corner_intensity_ul_2), int(corner_intensity_ul_3)]
+background_value_ul = min(corners)
+min_index_ul = corners.index(background_value_ul)
+image_thresholded_filtered_closed_ul = np.array(image_thresholded_filtered_closed_ul).astype(int)
+
+# Rotation for UR fragment
+if min_index_ur == 1:
+    image_thresholded_filtered_closed_ur = cv2.rotate(image_thresholded_filtered_closed_ur, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+if min_index_ur == 2:
+    image_thresholded_filtered_closed_ur = cv2.rotate(image_thresholded_filtered_closed_ur, cv2.ROTATE_180)
+    histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_180)
+    histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_180)
+if min_index_ur == 3:
+    image_thresholded_filtered_closed_ur = cv2.rotate(image_thresholded_filtered_closed_ur, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_ur = cv2.rotate(histo_fragment_ur, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_ur_aux = cv2.rotate(histo_fragment_ur_aux, cv2.ROTATE_90_CLOCKWISE)
+else:
+    image_thresholded_filtered_closed_ur = image_thresholded_filtered_closed_ur
+    histo_fragment_ur= histo_fragment_ur
+    histo_fragment_ur_aux= histo_fragment_ur_aux
+image_thresholded_filtered_closed_ur = np.array(image_thresholded_filtered_closed_ur).astype(bool)
+
+# Rotation for LR fragment
+if min_index_lr == 0:
+    image_thresholded_filtered_closed_lr = cv2.rotate(image_thresholded_filtered_closed_lr, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_90_CLOCKWISE)
+if min_index_lr == 2:
+    image_thresholded_filtered_closed_lr = cv2.rotate(image_thresholded_filtered_closed_lr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+if min_index_lr == 3:
+    image_thresholded_filtered_closed_lr = cv2.rotate(image_thresholded_filtered_closed_lr, cv2.ROTATE_180)
+    histo_fragment_lr = cv2.rotate(histo_fragment_lr, cv2.ROTATE_180)
+    histo_fragment_lr_aux = cv2.rotate(histo_fragment_lr_aux, cv2.ROTATE_180)
+else:
+    image_thresholded_filtered_closed_lr = image_thresholded_filtered_closed_lr
+    histo_fragment_lr= histo_fragment_lr
+    histo_fragment_lr_aux= histo_fragment_lr_aux
+image_thresholded_filtered_closed_lr = np.array(image_thresholded_filtered_closed_lr).astype(bool)
+
+# Rotation for ll fragment
+if min_index_ll == 0:
+    image_thresholded_filtered_closed_ll = cv2.rotate(image_thresholded_filtered_closed_ll, cv2.ROTATE_180)
+    histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_180)
+    histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_180)
+if min_index_ll == 1:
+    image_thresholded_filtered_closed_ll = cv2.rotate(image_thresholded_filtered_closed_ll, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_90_CLOCKWISE)
+if min_index_ll == 3:
+    image_thresholded_filtered_closed_ll = cv2.rotate(image_thresholded_filtered_closed_ll, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_ll = cv2.rotate(histo_fragment_ll, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_ll_aux = cv2.rotate(histo_fragment_ll_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+else:
+    image_thresholded_filtered_closed_ll = image_thresholded_filtered_closed_ll
+    histo_fragment_ll= histo_fragment_ll
+    histo_fragment_ll_aux= histo_fragment_ll_aux
+image_thresholded_filtered_closed_ll = np.array(image_thresholded_filtered_closed_ll).astype(bool)
+
+# Rotation for ul fragment
+if min_index_ul == 0:
+    image_thresholded_filtered_closed_ul = cv2.rotate(image_thresholded_filtered_closed_ul, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_90_COUNTERCLOCKWISE)
+if min_index_ul == 1:
+    image_thresholded_filtered_closed_ul = cv2.rotate(image_thresholded_filtered_closed_ul, cv2.ROTATE_180)
+    histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_180)
+    histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_180)
+if min_index_ul == 2:
+    image_thresholded_filtered_closed_ul = cv2.rotate(image_thresholded_filtered_closed_ul, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_ul = cv2.rotate(histo_fragment_ul, cv2.ROTATE_90_CLOCKWISE)
+    histo_fragment_ul_aux = cv2.rotate(histo_fragment_ul_aux, cv2.ROTATE_90_CLOCKWISE)
+else:
+    image_thresholded_filtered_closed_ul = image_thresholded_filtered_closed_ul
+    histo_fragment_ul= histo_fragment_ul
+    histo_fragment_ul_aux= histo_fragment_ul_aux
+image_thresholded_filtered_closed_ul = np.array(image_thresholded_filtered_closed_ul).astype(bool)
+
 # Identify the image boundary
 canny_edges_ul = canny(image_thresholded_filtered_closed_ul, sigma=5)
 canny_edges_ur = canny(image_thresholded_filtered_closed_ur, sigma=5)
@@ -317,16 +432,12 @@ canny_edges_lr = canny(image_thresholded_filtered_closed_lr, sigma=5)
 
 if args.show_image == True:
     fig, axs = plt.subplots(nrows=2, ncols=2)
-    #axs[0,0].imshow(res_ul)
     axs[0,0].imshow(histo_fragment_ul)
     axs[0,0].contour(canny_edges_ul, colors='r')
-    #axs[0,1].imshow(res_ur)
     axs[0,1].imshow(histo_fragment_ur)
     axs[0,1].contour(canny_edges_ur, colors='r')
-    #axs[1,0].imshow(res_ll)
     axs[1,0].imshow(histo_fragment_ll)
     axs[1,0].contour(canny_edges_ll, colors='r')
-    #axs[1,1].imshow(res_lr)
     axs[1,1].imshow(histo_fragment_lr)
     axs[1,1].contour(canny_edges_lr, colors='r')
     plt.show()
@@ -673,6 +784,72 @@ de_result = optimize.differential_evolution(
     args=[quadrant_list, anchor, data_dict, histogram_dists, output_size[0] / 100, 0.1, square_size // 2])
 
 print(de_result)
+
+if min_index_ur == 1 or min_index_ur == 3 :
+    original_height_ur_n = original_width_ur
+    original_width_ur_n = original_height_ur
+    original_height_ur_aux_n = original_width_ur_aux
+    original_width_ur_aux_n = original_height_ur_aux
+else:
+    original_height_ur_n = original_height_ur
+    original_width_ur_n = original_width_ur
+    original_height_ur_aux_n = original_height_ur_aux
+    original_width_ur_aux_n = original_width_ur_aux
+
+if min_index_lr == 0 or min_index_lr == 2:
+    original_height_lr_n = original_width_lr
+    original_width_lr_n = original_height_lr
+    original_height_lr_aux_n = original_width_lr_aux
+    original_width_lr_aux_n = original_height_lr_aux
+else:
+    original_height_lr_n = original_height_lr
+    original_width_lr_n = original_width_lr
+    original_height_lr_aux_n = original_height_lr_aux
+    original_width_lr_aux_n = original_width_lr_aux
+
+if min_index_ll == 1 or min_index_ll == 3:
+    original_height_ll_n = original_width_ll
+    original_width_ll_n = original_height_ll
+    original_height_ll_aux_n = original_width_ll_aux
+    original_width_ll_aux_n = original_height_ll_aux
+else:
+    original_height_ll_n = original_height_ll
+    original_width_ll_n = original_width_ll
+    original_height_ll_aux_n = original_height_ll_aux
+    original_width_ll_aux_n = original_width_ll_aux
+
+if min_index_ul == 0 or min_index_ul == 2:
+    original_height_ul_n = original_width_ul
+    original_width_ul_n = original_height_ul
+    original_height_ul_aux_n = original_width_ul_aux
+    original_width_ul_aux_n = original_height_ul_aux
+else:
+    original_height_ul_n = original_height_ul
+    original_width_ul_n = original_width_ul
+    original_height_ul_aux_n = original_height_ul_aux
+    original_width_ul_aux_n = original_width_ul_aux
+
+# Rescale images back to original
+histo_fragment_ur = resize(histo_fragment_ur, (original_height_ur_n, original_width_ur_n),
+                            preserve_range=True).astype(np.uint8)
+histo_fragment_ur_aux = resize(histo_fragment_ur_aux, (original_height_ur_aux_n, original_width_ur_aux_n),
+                            preserve_range=True).astype(np.uint8)                          
+histo_fragment_lr = resize(histo_fragment_lr, (original_height_lr_n, original_width_lr_n),
+                            preserve_range=True).astype(np.uint8)
+histo_fragment_lr_aux = resize(histo_fragment_lr_aux, (original_height_lr_aux_n, original_width_lr_aux_n),
+                            preserve_range=True).astype(np.uint8)
+histo_fragment_ll = resize(histo_fragment_ll, (original_height_ll_n, original_width_ll_n),
+                            preserve_range=True).astype(np.uint8)
+histo_fragment_ll_aux = resize(histo_fragment_ll_aux, (original_height_ll_aux_n, original_width_ll_aux_n),
+                            preserve_range=True).astype(np.uint8)
+histo_fragment_ul = resize(histo_fragment_ul, (original_height_ul_n, original_width_ul_n),
+                            preserve_range=True).astype(np.uint8)
+histo_fragment_ul_aux = resize(histo_fragment_ul_aux, (original_height_ul_aux_n, original_width_ul_aux_n),
+                            preserve_range=True).astype(np.uint8)
+
+
+images_original = [histo_fragment_ur, histo_fragment_lr, histo_fragment_ll, histo_fragment_ul]
+images_original_aux = [histo_fragment_ur_aux, histo_fragment_lr_aux, histo_fragment_ll_aux, histo_fragment_ul_aux]
 
 output_size = max([max(x.shape) for x in images_original]) * 2
 output_size = [output_size, output_size]
