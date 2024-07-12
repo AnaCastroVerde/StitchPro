@@ -10,7 +10,7 @@
 from tiatoolbox.wsicore import WSIReader
 from tiatoolbox.tools.tissuemask import MorphologicalMasker
 from tiatoolbox.utils.misc import get_bounding_box
-from pprint import pprint
+#from pprint import pprint
 import tifffile
 import numpy as np
 from matplotlib import pyplot as plt
@@ -27,9 +27,14 @@ def main(input_path: str,
          output_name: str,
          tiff_image: str,
          level: int,
+         top: int,
+         bottom: int,
+         left:int,
+         right:int,
          divide_horizontal: bool,
          divide_vertical: bool,
-         show_image: bool):
+         show_image: bool,
+         black_background: bool):
     
     ## -------------------------------------- Read the original TIFF images ---------------------------------------- ##
 
@@ -42,7 +47,7 @@ def main(input_path: str,
         resolution=level,
         units="level")
     
-    #reader_aux = WSIReader.open(input_path[:-1] + "_aux/" + tiff_image)
+    reader_aux = WSIReader.open(input_path[:-1] + "_aux/" + tiff_image)
 
     def preds_to_image(coords: np.ndarray, probs: np.ndarray, dims: Tuple[int, int], original_dims: Tuple[int, int], tile_size: Tuple[int, int] = (256, 256), binarize: bool = True) -> np.ndarray:
         dims = np.array(dims)
@@ -80,7 +85,7 @@ def main(input_path: str,
             binarize=binarize,
         )
     
-    image_aux = preds_json_to_image(input_path[:-1] + "_aux/"+ tiff_image + ".json", dims=wsi_thumb.shape[:2], binarize=False)
+    #image_aux = preds_json_to_image(input_path[:-1] + "_aux/"+ tiff_image + ".json", dims=wsi_thumb.shape[:2], binarize=False)
 
     ## ------------------ Extract a downsampled region within bounds (to remove whitespace on slide) --------------- ##
 
@@ -99,12 +104,12 @@ def main(input_path: str,
         show_side_by_side(wsi_thumb, masks)
     
     start_x, start_y, end_x, end_y = get_bounding_box(masks)
-    bounds = [start_x, start_y, end_x, end_y]
+    bounds = [int(start_x)+left, int(start_y)+top, int(end_x)-right, int(end_y)-bottom]
     region = reader.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
 
-    #region_aux = reader_aux.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
-    region_aux = image_aux[bounds[1] : bounds[3], bounds[0] : bounds[2]]
-    region_aux = np.stack((region_aux, region_aux, region_aux), axis=2)
+    region_aux = reader_aux.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
+    #region_aux = image_aux[bounds[1] : bounds[3], bounds[0] : bounds[2]]
+    #region_aux = np.stack((region_aux, region_aux, region_aux), axis=2)
 
     ## ------------------------------- Extract angle to orient fragment to horizontal ---------------------------- ##
     
@@ -123,6 +128,9 @@ def main(input_path: str,
 
     region_rotated_aux = rotate(region_aux, angle = angle, axes=(1, 0), reshape=True, mode = 'constant', cval=230.0)
     
+    if black_background == True:
+        region_rotated[np.sum(region_rotated, axis = -1) > 650] = 0
+
     if show_image == True:
         fig, axs = plt.subplots(nrows=2, ncols=2)
         axs[0,0].imshow(region)
@@ -218,12 +226,22 @@ if __name__ == "__main__":
                         help='Histopathology image to preprocess.')
     parser.add_argument('--level', dest='level', required=True, type=int,
                         help='Resolution level to downsample.')
+    parser.add_argument('--top', dest='top', required=False, type=int, default=0,
+                    help='Bounds distance to subtract on the top.')
+    parser.add_argument('--left', dest='left', required=False, type=int, default=0,
+                    help='Bounds distance to subtract on the left.')
+    parser.add_argument('--right', dest='right', required=False, type=int, default=0,
+                    help='Bounds distance to subtract on the right.')
+    parser.add_argument('--bottom', dest='bottom', required=False, type=int, default=0,
+                    help='Bounds distance to subtract on the bottom.')
     parser.add_argument('--divide_horizontal', dest='divide_horizontal', action = 'store_true',
                         help='Create two fragments from one, cut in the horizontal direction.')
     parser.add_argument('--divide_vertical', dest='divide_vertical', action = 'store_true',
                         help='Create two fragments from one, cut in the vertical direction.')
     parser.add_argument('--show_image', dest = 'show_image', action = 'store_true',
                     help = 'Show intermediate images.')
+    parser.add_argument('--black_background', dest = 'black_background', action = 'store_true',
+                    help = 'Turn image white background to black.')
 
     args = parser.parse_args()
 
@@ -232,6 +250,11 @@ if __name__ == "__main__":
          output_name=args.output_name,
          tiff_image=args.tiff_image,
          level=args.level,
+         top=args.top,
+         bottom=args.bottom,
+         left=args.left,
+         right=args.right,
          divide_horizontal=args.divide_horizontal,
          divide_vertical=args.divide_vertical,
-         show_image=args.show_image)
+         show_image=args.show_image,
+         black_background=args.black_background)
