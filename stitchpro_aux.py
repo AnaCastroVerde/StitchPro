@@ -827,12 +827,6 @@ output = output.astype(np.uint8)
 #output_aux = np.where(output_d_aux > 1, output_aux / output_d_aux, output_aux)
 output_aux = output_aux.astype(np.uint8)
 
-if args.show_image == True:
-    fig, ax = plt.subplots(1,2)
-    ax[0] = plt.imshow(output)
-    ax[1] = plt.imshow(output_aux)
-    plt.show()
-
 reader = WSIReader.open(output)
 info_dict = reader.info.as_dict()
 ## Remove the excessive white space around the output image
