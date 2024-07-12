@@ -47,7 +47,7 @@ def main(input_path: str,
         resolution=level,
         units="level")
     
-    reader_aux = WSIReader.open(input_path[:-1] + "_aux/" + tiff_image)
+    #reader_aux = WSIReader.open(input_path[:-1] + "_aux/" + tiff_image)
 
     def preds_to_image(coords: np.ndarray, probs: np.ndarray, dims: Tuple[int, int], original_dims: Tuple[int, int], tile_size: Tuple[int, int] = (256, 256), binarize: bool = True) -> np.ndarray:
         dims = np.array(dims)
@@ -85,7 +85,7 @@ def main(input_path: str,
             binarize=binarize,
         )
     
-    #image_aux = preds_json_to_image(input_path[:-1] + "_aux/"+ tiff_image + ".json", dims=wsi_thumb.shape[:2], binarize=False)
+    image_aux = preds_json_to_image(input_path[:-1] + "_aux/"+ tiff_image + ".json", dims=wsi_thumb.shape[:2], binarize=False)
 
     ## ------------------ Extract a downsampled region within bounds (to remove whitespace on slide) --------------- ##
 
@@ -107,9 +107,9 @@ def main(input_path: str,
     bounds = [int(start_x)+left, int(start_y)+top, int(end_x)-right, int(end_y)-bottom]
     region = reader.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
 
-    region_aux = reader_aux.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
-    #region_aux = image_aux[bounds[1] : bounds[3], bounds[0] : bounds[2]]
-    #region_aux = np.stack((region_aux, region_aux, region_aux), axis=2)
+    #region_aux = reader_aux.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
+    region_aux = image_aux[bounds[1] : bounds[3], bounds[0] : bounds[2]]
+    region_aux = np.stack((region_aux, region_aux, region_aux), axis=2)
 
     ## ------------------------------- Extract angle to orient fragment to horizontal ---------------------------- ##
     
