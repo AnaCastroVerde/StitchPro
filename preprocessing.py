@@ -42,7 +42,7 @@ def main(input_path: str,
         resolution=level,
         units="level")
     
-    reader_aux = WSIReader.open(input_path[:-1] + "_aux/" + tiff_image)
+    #reader_aux = WSIReader.open(input_path[:-1] + "_aux/" + tiff_image)
 
     def preds_to_image(coords: np.ndarray, probs: np.ndarray, dims: Tuple[int, int], original_dims: Tuple[int, int], tile_size: Tuple[int, int] = (256, 256), binarize: bool = True) -> np.ndarray:
         dims = np.array(dims)
