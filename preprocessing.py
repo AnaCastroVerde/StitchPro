@@ -31,6 +31,7 @@ def main(input_path: str,
          bottom: int,
          left:int,
          right:int,
+         force_angle:int,
          divide_horizontal: bool,
          divide_vertical: bool,
          show_image: bool,
@@ -38,7 +39,7 @@ def main(input_path: str,
     
     ## -------------------------------------- Read the original TIFF images ---------------------------------------- ##
 
-    reader = WSIReader.open(input_path + tiff_image)
+    reader = WSIReader.open(input_path + tiff_image + '.tiff')
     info_dict = reader.info.as_dict()
     #pprint(info_dict)
     #original_size = info_dict['level_dimensions'][0]
@@ -89,7 +90,7 @@ def main(input_path: str,
 
     ## ------------------ Extract a downsampled region within bounds (to remove whitespace on slide) --------------- ##
 
-    masker = MorphologicalMasker(power=1.25, min_region_size=500000)
+    masker = MorphologicalMasker(power=20, min_region_size=500000) #power = 1.25
     masks = masker.fit_transform([wsi_thumb])[0]
 
     if show_image == True:
@@ -102,8 +103,11 @@ def main(input_path: str,
             plt.axis("off")
             plt.show()
         show_side_by_side(wsi_thumb, masks)
-    
+        
     start_x, start_y, end_x, end_y = get_bounding_box(masks)
+
+    #bounds = [left, top, info_dict['level_dimensions'][level][0]-right, info_dict['level_dimensions'][level][1]-bottom]
+
     bounds = [int(start_x)+left, int(start_y)+top, int(end_x)-right, int(end_y)-bottom]
     region = reader.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
 
@@ -112,24 +116,48 @@ def main(input_path: str,
     region_aux = np.stack((region_aux, region_aux, region_aux), axis=2)
 
     ## ------------------------------- Extract angle to orient fragment to horizontal ---------------------------- ##
-    
+        
     binary_mask = masks.astype(np.uint8)*255
     contours, _ = cv.findContours(binary_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     largest_contour = max(contours, key=cv.contourArea)
     rect = cv.minAreaRect(largest_contour)
-    if rect[-1]<45:
+    print(rect[-1])
+    if rect[-1]<50:
         angle = round(rect[-1], 0)
     else:
-        angle = 0
+       angle = 0
 
-    ## ----------------------------- Small rotation angle to straighten up the fragment -------------------------- ##
-    
+    # # # ----------------------------- Small rotation angle to straighten up the fragment -------------------------- ##
     region_rotated = rotate(region, angle = angle, axes=(1, 0), reshape=True, mode = 'constant', cval=230.0)
-
     region_rotated_aux = rotate(region_aux, angle = angle, axes=(1, 0), reshape=True, mode = 'constant', cval=230.0)
-    
+
+    if force_angle:
+        region_rotated = rotate(region_rotated, angle = force_angle, axes=(1, 0), reshape=True, mode = 'constant', cval=230.0)
+        region_rotated_aux = rotate(region_rotated_aux, angle = force_angle, axes=(1, 0), reshape=True, mode = 'constant', cval=230.0)
+
+        masks = masker.fit_transform([region_rotated])[0]
+
+        if show_image == True:
+            def show_side_by_side(image_1: np.ndarray, image_2: np.ndarray) -> None:
+                plt.subplot(1, 2, 1)
+                plt.imshow(image_1)
+                plt.axis("off")
+                plt.subplot(1, 2, 2)
+                plt.imshow(image_2)
+                plt.axis("off")
+                plt.show()
+            show_side_by_side(region_rotated, masks)
+            
+        start_x, start_y, end_x, end_y = get_bounding_box(masks)
+        bounds = [int(start_x)+left, int(start_y)+top, int(end_x)-right, int(end_y)-bottom]
+        region_rotated = region_rotated[bounds[1] : bounds[3], bounds[0] : bounds[2]]
+        #region_aux = reader_aux.read_bounds(bounds, resolution=level, units="level", coord_space = "resolution")
+        region_rotated_aux = region_rotated_aux[bounds[1] : bounds[3], bounds[0] : bounds[2]]
+
     if black_background == True:
-        region_rotated[np.sum(region_rotated, axis = -1) > 650] = 0
+        masks = masker.fit_transform([region_rotated])[0]
+        region_rotated[masks[..., None] * region_rotated  == 0] = 255
+        region_rotated[(np.sum(region_rotated, axis = -1) > 750)] = 0
 
     if show_image == True:
         fig, axs = plt.subplots(nrows=2, ncols=2)
@@ -234,6 +262,8 @@ if __name__ == "__main__":
                     help='Bounds distance to subtract on the right.')
     parser.add_argument('--bottom', dest='bottom', required=False, type=int, default=0,
                     help='Bounds distance to subtract on the bottom.')
+    parser.add_argument('--force_angle', dest='force_angle', required=False, type=int, default=0,
+                    help='Small angle to rotate the fragment; (-) if clockwise.')
     parser.add_argument('--divide_horizontal', dest='divide_horizontal', action = 'store_true',
                         help='Create two fragments from one, cut in the horizontal direction.')
     parser.add_argument('--divide_vertical', dest='divide_vertical', action = 'store_true',
@@ -254,6 +284,7 @@ if __name__ == "__main__":
          bottom=args.bottom,
          left=args.left,
          right=args.right,
+         force_angle=args.force_angle,
          divide_horizontal=args.divide_horizontal,
          divide_vertical=args.divide_vertical,
          show_image=args.show_image,
